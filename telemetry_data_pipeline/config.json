@@ -1,0 +1,8 @@
+{
+    "service_name": "Telemetry Data Pipeline",
+    "version": "1.0.0",
+    "secret_key": "TEST_TOKEN_API_KEY_001",
+    "db_path": "metrics.db",
+    "api_key": "TEST_TOKEN_API_KEY_001",
+    "client_id": "TEST_CLIENT_SAMPLE_ID"
+}
