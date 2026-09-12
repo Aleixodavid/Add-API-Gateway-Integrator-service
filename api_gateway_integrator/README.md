@@ -1,96 +1,41 @@
-# 🛡️ API Gateway Integrator
+# API Gateway Integrator
 
-> **Microsserviço de Roteamento, Resiliência e Controle de Trafego**  
-> Componente central da suíte de integração para roteamento seguro de requisições, controle de taxa e tolerância a falhas em sistemas distribuídos.
+A lightweight, resilient API Gateway built with Python and Flask, implementing traffic control and fault-tolerance patterns for distributed systems.
 
----
+## Key Features
 
-## 🎯 Objetivo do Subprograma
+- **Circuit Breaker State Machine**: Implements `CLOSED`, `OPEN`, and `HALF_OPEN` states to prevent cascading failures.
+- **Token Bucket Rate Limiter**: Per-client IP rate limiting with continuous token refill.
+- **Exponential Backoff with Jitter**: Automated request retry handler to handle transient network issues safely.
+- **Decoupled Architecture**: Clean separation between routing, resilience policies, and HTTP handlers.
 
-O **API Gateway Integrator** atua como uma fachada (*Facade*) unificada para a suíte de microsserviços. Ele gerencia o fluxo de entrada de requisições, protegendo os serviços downstream contra sobrecarga, falhas em cascata e degradação de performance por meio de padrões resilientes de engenharia de software.
+## Architecture & Design Patterns
 
----
+### Circuit Breaker (`circuit_breaker.py`)
+Tracks consecutive failures. If failures reach `failure_threshold` (default: 5), the circuit transitions from `CLOSED` to `OPEN`, immediately short-circuiting downstream requests. After `recovery_timeout` (default: 30s), it enters `HALF_OPEN` to test downstream availability.
 
-## 🏛️ Arquitetura & Padrões de Projeto (*Design Patterns*)
+### Token Bucket Rate Limiter (`rate_limiter.py`)
+Enforces request rate limits using a sliding window token bucket (default: 60 tokens capacity, 10 tokens/sec refill rate).
 
-### 1. **Circuit Breaker (Máquina de Estados)**
-- **Arquivo:** `circuit_breaker.py`
-- **Estados:**
-  - `CLOSED`: Operação normal. As requisições são encaminhadas com sucesso.
-  - `OPEN`: O serviço downstream apresentou taxa de erro superior ao limite (`failure_threshold = 5`). As requisições são imediatamente bloqueadas para evitar contaminação.
-  - `HALF_OPEN`: Após o tempo de recuperação (`recovery_timeout = 30s`), uma requisição de teste é permitida para avaliar se o serviço recuperou a estabilidade.
-- **Benefício:** Evita sobrecarga em serviços instáveis e previne falhas em cascata.
+### Retry Handler (`retry_handler.py`)
+Wraps execution in exponential backoff ($0.5s \times 2^{n-1}$) with randomized jitter to prevent thundering herd problems.
 
-### 2. **Token Bucket Rate Limiter**
-- **Arquivo:** `rate_limiter.py`
-- **Algoritmo:** Balde de Tokens (*Token Bucket*) com janela deslizante e reposição contínua.
-- **Configuração Padrão:** Capacidade de 60 tokens, com taxa de reposição de 10 tokens/segundo por IP/Cliente.
-- **Benefício:** Mitiga ataques de negação de serviço (DoS) e garante *fair usage* dos recursos da API.
+## Configuration & Security
 
-### 3. **Exponential Backoff com Jitter**
-- **Arquivo:** `retry_handler.py`
-- **Mecanismo:** Retentativa automática de requisições com tempo de espera exponencial que dobra a cada falha ($0.5s, 1s, 2s, \dots$), acrescido de um *jitter* aleatório.
-- **Benefício:** Resolve problemas de indisponibilidade temporária sem causar o fenômeno de *thundering herd*.
+Authentication credentials and secrets are managed via environment variables:
+- `AUTH_USERNAME` (default placeholder in `config.json`: `YOUR_USERNAME_HERE`)
+- `AUTH_PASSWORD` (default placeholder in `config.json`: `YOUR_PASSWORD_HERE`)
 
----
+## API Specification
 
-## 🔒 Sanitização & Segurança
+- `GET /api/health` — Service health check and circuit state.
+- `POST /api/proxy` — Main proxy endpoint with rate limiting and circuit breaker protection.
+- `GET /api/circuit-breaker/status` — Inspect current state machine metrics.
+- `POST /api/circuit-breaker/reset` — Manual reset trigger to restore `CLOSED` state.
+- `GET /api/rate-limit/stats` — Active client stats and token bucket metrics.
 
-- **Chaves de API:** Substituídas por placeholders de demonstração corporativa (`TEST_TOKEN_API_KEY_001`).
-- **Identificadores de Cliente:** Formatados como `TEST_CLIENT_SAMPLE_ID`.
-- **Autenticação HTTP Basic:** Protegida sob a credencial sanitizada `admin` / `admin`.
-
----
-
-## 📡 Endpoints da API (Porta `5001`)
-
-### `GET /api/health`
-Verifica o status de saúde do gateway.
-- **Resposta:**
-  ```json
-  {
-    "service": "API Gateway Integrator",
-    "status": "online",
-    "version": "1.0.0"
-  }
-  ```
-
-### `POST /api/proxy`
-Encaminha requisições aplicando filtros de Rate Limit e Circuit Breaker.
-- **Body Exemplo:**
-  ```json
-  {
-    "target": "telemetry_service",
-    "payload": { "event": "ping" }
-  }
-  ```
-
-### `GET /api/circuit-breaker/status`
-Retorna o estado atual da máquina de estados do Circuit Breaker.
-- **Resposta Exemplo:**
-  ```json
-  {
-    "failure_count": 0,
-    "failure_threshold": 5,
-    "name": "gateway_circuit",
-    "state": "CLOSED",
-    "total_requests": 14
-  }
-  ```
-
-### `POST /api/circuit-breaker/reset`
-Força a reinicialização manual do circuito para o estado `CLOSED`.
-
-### `GET /api/rate-limit/stats`
-Estatísticas em tempo real do limitador de taxa Token Bucket.
-
----
-
-## 🧪 Testes Unitários
-
-Para executar a suíte de testes do Gateway:
+## Running Tests
 
 ```bash
-cd D:\Pessoal\portifolio\api_gateway_integrator
 python -m pytest tests/ -v
 ```
