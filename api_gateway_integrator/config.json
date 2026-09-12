@@ -1,0 +1,17 @@
+{
+    "service_name": "API Gateway Integrator",
+    "version": "1.0.0",
+    "secret_key": "TEST_TOKEN_API_KEY_001",
+    "auth_username": "admin",
+    "auth_password": "admin",
+    "api_key": "TEST_TOKEN_API_KEY_001",
+    "client_id": "TEST_CLIENT_SAMPLE_ID",
+    "customer_id": "CUST_TEST_1000",
+    "account_id": "ACT_TEST_9999",
+    "rate_limit_capacity": 60,
+    "rate_limit_refill_rate": 10,
+    "max_retries": 3,
+    "base_delay": 0.5,
+    "circuit_breaker_failure_threshold": 5,
+    "circuit_breaker_recovery_timeout": 30
+}
